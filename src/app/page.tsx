@@ -1,7 +1,14 @@
 'use client'
 import { useQuery } from '@tanstack/react-query'
 import { Loader2Icon } from 'lucide-react'
-import { Fragment, ReactNode, useMemo, useRef, useState } from 'react'
+import {
+  Fragment,
+  ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from 'react'
 import { z } from 'zod'
 import { Elo } from '@/components/elo-icon'
 import { Button } from '@/components/ui/button'
@@ -55,6 +62,10 @@ async function fetchFaceitPlayers(
   return response.json()
 }
 
+function validateTournamentId(tournamentId: unknown): tournamentId is string {
+  return z.guid().safeParse(tournamentId).success
+}
+
 export default function HomePage() {
   const inputRef = useRef<HTMLInputElement>(null)
   const [tournamentId, setTournamentId] = useState<string>('')
@@ -93,6 +104,17 @@ export default function HomePage() {
     enabled: playerIds.length > 0,
     queryFn: () => fetchFaceitPlayers(playerIds)
   })
+
+  useEffect(() => {
+    const { searchParams } = new URL(location.href)
+    const tournamentId = searchParams.get('tournamentId')
+
+    if (searchParams.has('tournamentId')) {
+      if (validateTournamentId(tournamentId)) {
+        setTournamentId(tournamentId)
+      }
+    }
+  }, [])
 
   const isRosterEmpty = !roster || isRosterLoading
   const isLoading = isRosterLoading || isPlayersLoading
